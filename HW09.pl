@@ -49,7 +49,7 @@
 
 /* Allow asserts and retracts for the predicate -at- */
 :- dynamic at/2.
-
+:- dynamic holding/1.
 
 /*
   First, text descriptions of all the places in 
@@ -67,15 +67,33 @@ description(maze(_),
   'You are in a maze of twisty trails, all alike.').
 description(mountaintop,
   'You are on the mountaintop.').
-
+description(gate,
+  'You are at a gate.').
 /*
   report prints the description of your current
   location.
 */
 report :-
-  at(you,X),
-  description(X,Y),
-  write(Y), nl.
+  at(you,Loc),
+  description(Loc,Y),
+  write(Y), nl,
+  !,
+  report_items,
+  report_held_items.
+
+report_items :-
+    at(you, Loc),
+    at(Item, Loc), 
+    item(Item),
+    write("You see a "), write(Item), write(".\n").
+
+report_items.
+
+report_held_items :-
+    holding(Item),
+    write("You are holding a "), write(Item), write(".\n").
+
+report_held_items.
 
 /*
   These connect predicates establish the map.
@@ -89,7 +107,8 @@ connect(path,right,cliff).
 connect(path,left,cliff).
 connect(path,forward,fork).
 connect(fork,left,maze(0)).
-connect(fork,right,mountaintop).
+connect(fork,right,gate).
+connect(gate,forward,mountaintop).
 connect(maze(0),left,maze(1)).
 connect(maze(0),right,maze(3)).
 connect(maze(1),left,maze(0)).
@@ -103,37 +122,65 @@ connect(maze(3),right,maze(3)).
   move(Dir) moves you in direction Dir, then
   prints the description of your new location.
 */
-move(Dir) :-
-  write('--'),write(Dir),write('-----'),
+do(Dir) :-
+  direction(Dir),
+  write('-----'),write(Dir),write('-----\n'),
   at(you,Loc),
   connect(Loc,Dir,Next),
   retract(at(you,Loc)),
   assert(at(you,Next)),
   report,
   !.
+
+/*
+  Pickup and drop.
+*/
+
+do(pickup) :-
+    write('Pick up what?\n'),
+    read(Item),
+    item(key),
+    at(you, L),
+    at(Item, L),
+    assert(holding(Item)),
+    retract(at(Item, L)),
+    write("You pick up the "), write(Item), write(".\n"),
+    report,
+    !.
+
+do(drop) :-
+    write('Drop what?\n'),
+    read(Item),
+    holding(Item),
+    at(you, L),
+    assert(at(Item, L)),
+    retract(holding(Item)),
+    write("You drop the "), write(Item), write(".\n"),
+    report,
+    !.
+
 /*
   But if the argument was not a legal direction,
   print an error message and don't move.
 */
-move(_) :-
-  write('That is not a legal move.\n'),
+do(_) :-
+  write('That is not a legal action.\n'),
   report.
 
+/* Items */
+
+item(key).
+item(stick).
+holding(sword).
 /*
   Move commands. The player can move left, right,
   or forward.
 */
-move(f) :- move(forward).
-move(l) :- move(left).
-move(r) :- move(right).
-/* shortcut created to use just the direction word. */
-forward :- move(forward).
-left :- move(left).
-right :- move(right).
-/* shortcut created to use just the direction letter. */
-f :- move(forward).
-l :- move(left).
-r :- move(right).
+
+direction(forward).
+direction(left).
+direction(right).
+
 
 /*
   If you and the ogre are at the same place, it 
@@ -185,6 +232,7 @@ cliff :-
 */
 cliff.
 
+
 /*
   Main loop.  Stop if player won or lost.
 */
@@ -198,9 +246,9 @@ main :-
   Then repeat.
 */
 main :-
-  write('\nNext move -- '),
-  read(Move),
-  call(move(Move)),
+  write('\n\nNext move -- '),
+  read(Action),
+  call(do(Action)),
   ogre,
   treasure,
   cliff,
@@ -213,12 +261,15 @@ main :-
 */
     
 go :-
-  retractall(at(_,_)), % clean up from previous runs
+  retractall(at(_, _)), % cleaup from previous runs
+  retractall(holding(_)),
   assert(at(you,valley)),
   assert(at(ogre,maze(3))),
   assert(at(treasure,mountaintop)),
+  assert(at(stick, valley)),
+  assert(at(key, valley)), 
   write('This is an adventure game. \n'),
-  write('Legal moves are (l)eft, (r)ight, or (f)orward.\n'),
+  write('Legal actions are (l)eft, (r)ight, (f)orward, (p)ickup, or (d)rop.\n'),
   write('End each move with a period.\n\n'),
   report,
   main.
