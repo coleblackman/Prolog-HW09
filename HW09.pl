@@ -193,9 +193,24 @@ direction(forward).
 direction(left).
 direction(right).
 
-
 /*
-  If you and the ogre are at the same place, it 
+  If you and the ogre are at the same place, and you have the sword, then you 
+  kill the ogre.
+*/
+ogre :-
+  at(ogre,Loc),
+  at(you,Loc),
+  holding(sword),
+  write('You meet a very angry ogre.\n'),
+  write('You take out your trusty sword and slay the ogre!\n'),
+  retract(at(ogre,Loc)),
+  /* ogre is dead, but for simplicity move to valley since you can't get back to
+  the valley once you leave
+  */
+  assert(at(ogre,valley)),
+  !.
+/*
+  If you and the ogre are at the same place (and you do not have the sword), it 
   kills you.
 */
 ogre :-
