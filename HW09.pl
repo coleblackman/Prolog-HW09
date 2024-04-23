@@ -123,7 +123,7 @@ connect(maze(3),right,maze(3)).
 lightning_enforcement(Next) :-
     holding(key),
     Next == gate,
-    write('You attempt to go through the gatee, but you are still holding a key! Lightning erupts from the sky and smites you down. You have dared to test the old gods.\n'),
+    write('You attempt to go through the gate, but you are still holding a key! Lightning erupts from the sky and smites you down. You have dared to test the old gods.\n'),
     retract(at(you,_)),
     assert(at(you,done)),
     !.
@@ -273,7 +273,7 @@ main :-
 */
     
 go :-
-  retractall(at(_, _)), % cleaup from previous runs
+  retractall(at(_, _)), % cleanup from previous runs
   retractall(holding(_)),
   assert(at(you,valley)),
   assert(at(ogre,maze(3))),
