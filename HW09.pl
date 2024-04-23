@@ -118,6 +118,21 @@ connect(maze(2),right,maze(0)).
 connect(maze(3),left,maze(0)).
 connect(maze(3),right,maze(3)).
 
+
+
+lightning_enforcement(Next) :-
+    holding(key),
+    Next == gate,
+    write('You attempt to go through the gatee, but you are still holding a key! Lightning erupts from the sky and smites you down. You have dared to test the old gods.\n'),
+    retract(at(you,_)),
+    assert(at(you,done)),
+    !.
+
+lightning_enforcement(_).
+
+/*
+  Pickup and drop.
+*/
 /*
   move(Dir) moves you in direction Dir, then
   prints the description of your new location.
@@ -127,14 +142,11 @@ do(Dir) :-
   write('-----'),write(Dir),write('-----\n'),
   at(you,Loc),
   connect(Loc,Dir,Next),
+  lightning_enforcement(Next),
   retract(at(you,Loc)),
   assert(at(you,Next)),
   report,
   !.
-
-/*
-  Pickup and drop.
-*/
 
 do(pickup) :-
     write('Pick up what?\n'),
