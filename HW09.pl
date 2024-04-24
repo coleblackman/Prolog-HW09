@@ -1,3 +1,117 @@
+/* 
+Playthrough 1:
+This is an adventure game. Legal actions are left, right, forward, unlock, 
+pickup, or drop. End each move with a period. You are in a pleasant valley, with
+a trail ahead.
+You see a stick. Next move --
+forward.
+-----forward----- You are on a path, with ravines on both sides.
+Next move --
+forward.
+-----forward----- You are at a fork in the path.
+Next move --
+left.
+-----left----- You are in a maze of twisty trails, all alike.
+You see a sword. Next move --
+pickup.
+Pick up what?
+sword.
+You pick up the sword. You are in a maze of twisty trails, all alike.
+You are holding a sword. Next move --
+right.
+-----right----- You are in a maze of twisty trails, all alike.
+You are holding a sword. You meet a very angry ogre. You take out your trusty 
+sword and slay the ogre! Next move --
+left.
+-----left----- You are in a maze of twisty trails, all alike.
+You are holding a sword. Next move --
+left.
+-----left----- You are in a maze of twisty trails, all alike.
+You see a key. You are holding a sword. Next move --
+drop.
+Drop what?
+sword.
+You drop the sword. You are in a maze of twisty trails, all alike.
+You see a key. Next move --
+pickup.
+Pick up what?
+key.
+You pick up the key. You are in a maze of twisty trails, all alike.
+You see a sword. You are holding a key. Next move --
+right.
+-----right----- You are in a maze of twisty trails, all alike.
+You are holding a key. Next move --
+left.
+-----left----- You are at a fork in the path.
+You are holding a key. Next move --
+right.
+-----right----- You are at a locked gate.
+You are holding a key. Next move --
+unlock.
+You have unlocked the gate!. Next move --
+forward.
+-----forward----- You are on the mountaintop.
+There is a treasure here. Congratulations, you win! Thanks for playing.
+
+Playthrough 2:
+This is an adventure game. Legal actions are left, right, forward, unlock, 
+pickup, or drop. End each move with a period. You are in a pleasant valley, with
+a trail ahead.
+You see a stick. Next move --
+forward.
+-----forward----- You are on a path, with ravines on both sides.
+Next move --
+forward.
+-----forward----- You are at a fork in the path.
+Next move --
+left.
+-----left----- You are in a maze of twisty trails, all alike.
+You see a sword. Next move --
+right.
+-----right----- You are in a maze of twisty trails, all alike.
+You meet a very angry ogre. There is no escape for you. Ahhh! Thanks for playing.
+
+Playthrough 3:
+This is an adventure game. Legal actions are left, right, forward, unlock, 
+pickup, or drop. End each move with a period. You are in a pleasant valley, with 
+a trail ahead.
+You see a stick. Next move --
+forward.
+-----forward----- You are on a path, with ravines on both sides.
+Next move --
+forward.
+-----forward----- You are at a fork in the path.
+Next move --
+left.
+-----left----- You are in a maze of twisty trails, all alike.
+You see a sword. Next move --
+left.
+-----left----- You are in a maze of twisty trails, all alike.
+You see a key. Next move --
+pickup.
+Pick up what?
+key.
+You pick up the key. You are in a maze of twisty trails, all alike.
+You are holding a key. Next move --
+right.
+-----right----- You are in a maze of twisty trails, all alike.
+You are holding a key. Next move --
+left.
+-----left----- You are at a fork in the path.
+You are holding a key. Next move --
+right.
+-----right----- You are at a locked gate.
+You are holding a key. Next move --
+forward.
+-----forward----- You attempted to go through the locked gate! Lightning erupts 
+from the sky and smites you down. You have dared to test the old gods. That is 
+not a legal action. You are holding a key. Thanks for playing.
+*/
+
+/*Added feature: there is a sword at the start of the maze. 
+If the player picks it up and sees the ogre, they kill the ogre.
+*/
+
 /* HW09
 
   In class on Monday (4/15) we did a walkthrough of a simple text-based
@@ -67,8 +181,8 @@ description(maze(_),
   'You are in a maze of twisty trails, all alike.').
 description(mountaintop,
   'You are on the mountaintop.').
-description(gate,
-  'You are at a gate.').
+description(gate_locked,
+  'You are at a locked gate.').
 /*
   report prints the description of your current
   location.
@@ -107,8 +221,9 @@ connect(path,right,cliff).
 connect(path,left,cliff).
 connect(path,forward,fork).
 connect(fork,left,maze(0)).
-connect(fork,right,gate).
-connect(gate,forward,mountaintop).
+connect(fork,right,gate_locked).
+connect(gate_locked, forward, gate_unlocked).
+connect(gate_unlocked,forward,mountaintop).
 connect(maze(0),left,maze(1)).
 connect(maze(0),right,maze(3)).
 connect(maze(1),left,maze(0)).
@@ -120,15 +235,16 @@ connect(maze(3),right,maze(3)).
 
 
 
-lightning_enforcement(Next) :-
-    holding(key),
-    Next == gate,
-    write('You attempt to go through the gate, but you are still holding a key! Lightning erupts from the sky and smites you down. You have dared to test the old gods.\n'),
+lightning_enforcement(Loc,Dir) :-
+    /*holding(key),*/
+    Loc == gate_locked,
+    Dir == forward,
+    write('You attempted to go through the locked gate! Lightning erupts from the sky and smites you down. You have dared to test the old gods.\n'),
     retract(at(you,_)),
     assert(at(you,done)),
     !.
 
-lightning_enforcement(_).
+lightning_enforcement(_,_).
 
 /*
   Pickup and drop.
@@ -142,9 +258,10 @@ do(Dir) :-
   write('-----'),write(Dir),write('-----\n'),
   at(you,Loc),
   connect(Loc,Dir,Next),
-  lightning_enforcement(Next),
+  lightning_enforcement(Loc,Dir),
   retract(at(you,Loc)),
   assert(at(you,Next)),
+  
   report,
   !.
 
@@ -171,6 +288,12 @@ do(drop) :-
     report,
     !.
 
+do(unlock) :-
+    holding(key),
+    write("You have unlocked the gate!"), write(".\n"),
+  	retract(at(you,gate_locked)),
+  	assert(at(you,gate_unlocked)),
+    !.
 /*
   But if the argument was not a legal direction,
   print an error message and don't move.
@@ -183,7 +306,7 @@ do(_) :-
 
 item(key).
 item(stick).
-holding(sword).
+item(sword).
 /*
   Move commands. The player can move left, right,
   or forward.
@@ -294,10 +417,10 @@ go :-
   assert(at(ogre,maze(3))),
   assert(at(treasure,mountaintop)),
   assert(at(stick, valley)),
-  assert(at(key, valley)),
-  assert(at(sword, maze(0))), 
+  assert(at(key, maze(1))),
+  assert(at(sword,maze(0))),  
   write('This is an adventure game. \n'),
-  write('Legal actions are (l)eft, (r)ight, (f)orward, (p)ickup, or (d)rop.\n'),
+  write('Legal actions are left, right, forward, unlock, pickup, or drop.\n'),
   write('End each move with a period.\n\n'),
   report,
   main.
